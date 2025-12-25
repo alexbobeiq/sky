@@ -9,8 +9,8 @@ const MESSAGES = [
     "Cenușăreasa mea!", "Vroom Vroom!", "Sari peste pantof!"
 ];
 
-// DETECTARE MOBIL (Ecran mai ingust de 768px)
-const isMobile = window.innerWidth < 768;
+// DETECTARE MOBIL AGRESIVA
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
 // Globals
 let scene, camera, renderer;
@@ -55,11 +55,15 @@ const restartLoseBtn = document.getElementById('restart-lose-btn');
 const restartWinBtn = document.getElementById('restart-win-btn');
 
 function bindButton(btn, action) {
-    btn.addEventListener('click', action);
-    btn.addEventListener('touchstart', (e) => {
-        e.preventDefault(); 
-        action();
-    }, { passive: false });
+    // Folosim doar touchstart pe mobil pentru reactie instanta
+    if (isMobile) {
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); 
+            action();
+        }, { passive: false });
+    } else {
+        btn.addEventListener('click', action);
+    }
 }
 
 bindButton(startBtn, startGame);
@@ -72,43 +76,44 @@ function init() {
     // ZIUA
     const dayColor = 0xaaccff; 
     scene.background = new THREE.Color(dayColor);
+    // Ceata simpla (mai ieftina la calcul)
     scene.fog = new THREE.Fog(dayColor, 60, 180); 
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // Pe mobil departam putin camera ca sa se vada mai bine benzile
-    camera.position.set(0, isMobile ? 8 : 7, isMobile ? 16 : 14); 
+    camera.position.set(0, isMobile ? 9 : 7, isMobile ? 18 : 14); 
     camera.lookAt(0, 1, -5);
 
-    // --- OPTIMIZARE RENDERER ---
+    // --- OPTIMIZARE EXTREMA RENDERER ---
     renderer = new THREE.WebGLRenderer({ 
-        antialias: !isMobile, // Oprim antialias pe mobil (performanta)
-        alpha: true,
-        powerPreference: "high-performance" // Cere browserului GPU-ul puternic
+        antialias: !isMobile, // FARA antialias pe mobil
+        powerPreference: "high-performance"
     });
     
-    // LIMITARE PIXEL RATIO: Pe mobil max 1.5, altfel "fierbe" telefonul
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
-    
+    // Pe mobil reducem rezolutia la 85% sau 1.0 fix. Fara Retina display.
+    // Asta creste FPS-ul masiv.
+    renderer.setPixelRatio(isMobile ? 0.85 : window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    
-    // Pe mobil folosim umbre simple (Basic), pe PC umbre fine (PCFSoft)
-    renderer.shadowMap.type = isMobile ? THREE.BasicShadowMap : THREE.PCFSoftShadowMap;
+
+    // UMBRE: Oprite complet pe mobil pentru viteza maxima
+    renderer.shadowMap.enabled = !isMobile;
+    if (!isMobile) {
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
     
     document.body.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // Lumini
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffde7, 1.0);
+    const dirLight = new THREE.DirectionalLight(0xfffde7, 0.9);
     dirLight.position.set(20, 30, 10);
-    dirLight.castShadow = true;
-    
-    // OPTIMIZARE UMBRE: Harta mica pe mobil
-    const shadowSize = isMobile ? 512 : 2048; 
-    dirLight.shadow.mapSize.width = shadowSize;
-    dirLight.shadow.mapSize.height = shadowSize;
-    
+    // Calculam umbre doar pe PC
+    if (!isMobile) {
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+    }
     scene.add(dirLight);
 
     gltfLoader = new THREE.GLTFLoader();
@@ -118,7 +123,11 @@ function init() {
 
     createEnvironment();
     createPlayer();
-    createSnow();
+    
+    // FARA zapada pe mobil (castig mare de performanta)
+    if (!isMobile) {
+        createSnow();
+    }
 
     window.addEventListener('resize', onWindowResize, false);
     
@@ -137,9 +146,11 @@ function loadShoeModel() {
         loadedShoeModel.scale.set(0.2, 0.2, 0.2); 
         loadedShoeModel.rotation.y = 0; 
         
-        loadedShoeModel.traverse(function (node) {
-            if (node.isMesh) node.castShadow = true;
-        });
+        if (!isMobile) {
+            loadedShoeModel.traverse(function (node) {
+                if (node.isMesh) node.castShadow = true;
+            });
+        }
     });
 }
 
@@ -149,20 +160,25 @@ function loadCarModel() {
         loadedCarModel.scale.set(10.0, 15.0, 10.0); 
         loadedCarModel.rotation.y = 0; 
 
-        loadedCarModel.traverse(function (node) {
-            if (node.isMesh) node.castShadow = true;
-        });
+        if (!isMobile) {
+            loadedCarModel.traverse(function (node) {
+                if (node.isMesh) node.castShadow = true;
+            });
+        }
     }, undefined, function(e) { console.error("Lipseste mazda.glb", e); });
 }
 
 function createEnvironment() {
     roadGroup = new THREE.Group();
 
+    // Materiale mai simple (Lambert) in loc de Phong pe mobil
+    const envMatClass = isMobile ? THREE.MeshLambertMaterial : THREE.MeshPhongMaterial;
+
     const roadGeo = new THREE.BoxGeometry(20, 0.2, ROAD_LENGTH);
-    const roadMat = new THREE.MeshPhongMaterial({ color: 0x5e4b5e });
+    const roadMat = new envMatClass({ color: 0x5e4b5e });
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.position.set(0, -0.1, -ROAD_LENGTH / 2 + 20);
-    road.receiveShadow = true;
+    if (!isMobile) road.receiveShadow = true;
     roadGroup.add(road);
 
     const lineGeo = new THREE.PlaneGeometry(0.2, ROAD_LENGTH);
@@ -179,7 +195,7 @@ function createEnvironment() {
     roadGroup.add(lineRight);
 
     const snowBankGeo = new THREE.BoxGeometry(10, 1.5, ROAD_LENGTH);
-    const snowBankMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const snowBankMat = new envMatClass({ color: 0xffffff });
     
     const leftBank = new THREE.Mesh(snowBankGeo, snowBankMat);
     leftBank.position.set(-15, 0.5, -ROAD_LENGTH / 2 + 20); 
@@ -213,10 +229,11 @@ function createPlayer() {
 
     const material = new THREE.MeshPhongMaterial({ color: 0xff3333, shininess: 150 });
     const heartMesh = new THREE.Mesh( geometry, material );
-    heartMesh.castShadow = true;
+    if (!isMobile) heartMesh.castShadow = true;
     heartMesh.name = "heartModel"; 
     player.add(heartMesh);
 
+    // Umbra simpla (cerc negru) sub jucator
     const shadowGeo = new THREE.CircleGeometry(0.4, 16);
     const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.3, transparent: true });
     const shadow = new THREE.Mesh(shadowGeo, shadowMat);
@@ -231,10 +248,9 @@ function createPlayer() {
 }
 
 function createSnow() {
+    // Functia nu e apelata pe mobil, dar ramane definita
     const snowGeo = new THREE.BufferGeometry();
-    // OPTIMIZARE: Mult mai putini fulgi pe mobil (600 vs 2000)
-    const snowCount = isMobile ? 600 : 2000;
-    
+    const snowCount = 1500;
     const posArray = new Float32Array(snowCount * 3);
     for(let i = 0; i < snowCount * 3; i+=3) {
         posArray[i] = (Math.random() - 0.5) * 80; 
@@ -299,6 +315,7 @@ function spawnSingleCar(laneIndex, zPos) {
 
 function handleInput(e) {
     if (!gameActive) return;
+
     if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
         e.preventDefault();
     }
@@ -427,12 +444,15 @@ function animate() {
         spawnDistanceTimer = MIN_DISTANCE_BETWEEN_OBS + Math.random() * 20;
     }
 
-    const positions = snowSystem.geometry.attributes.position.array;
-    for(let i = 1; i < positions.length; i+=3) {
-        positions[i] -= 0.1; 
-        if (positions[i] < 0) positions[i] = 30;
+    // Animam zapada doar daca exista
+    if (snowSystem) {
+        const positions = snowSystem.geometry.attributes.position.array;
+        for(let i = 1; i < positions.length; i+=3) {
+            positions[i] -= 0.1; 
+            if (positions[i] < 0) positions[i] = 30;
+        }
+        snowSystem.geometry.attributes.position.needsUpdate = true;
     }
-    snowSystem.geometry.attributes.position.needsUpdate = true;
 
     score += 1; 
     scoreEl.innerText = score;
@@ -495,8 +515,7 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    // Recalculam Pixel Ratio la resize daca trecem de pe un monitor pe altul
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
+    renderer.setPixelRatio(isMobile ? 0.85 : window.devicePixelRatio);
 }
 
 init();
