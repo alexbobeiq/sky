@@ -1,12 +1,13 @@
 // --- CONFIGURARE JOC ---
 const TARGET_SCORE = 18000;
-const GAME_SPEED = 0.39; 
+// Viteza usor crescuta pentru fluiditate
+const GAME_SPEED = 0.40; 
 
 const MESSAGES = [
     "Te iubesc!", "Ești superbă!", "Hai la shopping!", 
     "Ești raza mea", "Zâmbește!", "Pantofi noi?",
     "Încă puțin!", "Perfectă!", "Inima mea e a ta",
-    "Cenușăreasa mea!", "Vroom Vroom!", "Atenție la mașini!"
+    "Cenușăreasa mea!", "Vroom Vroom!", "Sari peste pantof!"
 ];
 
 // Globals
@@ -36,7 +37,8 @@ const GROUND_Y = 1;
 
 // Spawn logic
 let spawnDistanceTimer = 0; 
-const MIN_DISTANCE_BETWEEN_OBS = 24; 
+// Distanta putin mai mica pentru ca acum vedem mai departe
+const MIN_DISTANCE_BETWEEN_OBS = 22; 
 
 // --- TOUCH VARIABLES (SWIPE) ---
 let touchStartX = 0;
@@ -46,8 +48,7 @@ let touchStartY = 0;
 const scoreEl = document.getElementById('score');
 const msgContainer = document.getElementById('messages-container');
 
-// Buttons
-// Pe mobil 'click' are delay. Folosim touchstart direct pentru butoane.
+// Buttons (Touch fix included)
 const startBtn = document.getElementById('start-btn');
 const restartLoseBtn = document.getElementById('restart-lose-btn');
 const restartWinBtn = document.getElementById('restart-win-btn');
@@ -55,7 +56,7 @@ const restartWinBtn = document.getElementById('restart-win-btn');
 function bindButton(btn, action) {
     btn.addEventListener('click', action);
     btn.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Previne dubla declansare
+        e.preventDefault(); 
         action();
     }, { passive: false });
 }
@@ -71,7 +72,11 @@ function init() {
     // ZIUA
     const dayColor = 0xaaccff; 
     scene.background = new THREE.Color(dayColor);
-    scene.fog = new THREE.Fog(dayColor, 15, 80); 
+    
+    // --- MODIFICARE FOG (CEATA) ---
+    // O impingem mult mai departe.
+    // near: 60 (incepe subtil), far: 180 (total opac)
+    scene.fog = new THREE.Fog(dayColor, 60, 180); 
 
     camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 7, 14); 
@@ -104,11 +109,8 @@ function init() {
 
     window.addEventListener('resize', onWindowResize, false);
     
-    // --- CONTROALE ---
+    // --- CONTROALE (Touch Fix included) ---
     document.addEventListener('keydown', handleInput);
-    
-    // TOUCH EVENTS (Aggressive)
-    // "passive: false" permite folosirea e.preventDefault() care blocheaza scroll-ul
     document.addEventListener('touchstart', handleTouchStart, { passive: false });
     document.addEventListener('touchmove', handleTouchMove, { passive: false }); 
     document.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -230,19 +232,41 @@ function createSnow() {
     scene.add(snowSystem);
 }
 
+// --- MODIFICARE: LOGICA DE SPAWN CU GARANTIE PANTOF ---
 function spawnObstaclePattern(zPos) {
     const lanes = [0, 1, 2];
-    lanes.sort(() => Math.random() - 0.5); 
+    lanes.sort(() => Math.random() - 0.5); // Amestecam benzile
 
-    const obstacleCount = Math.random() < 0.6 ? 2 : 1;
+    // Decidem cate obstacole: 1, 2 sau 3
+    let obstacleCount;
+    const r = Math.random();
+    if (r < 0.25) obstacleCount = 1;      // 25% sanse pt 1
+    else if (r < 0.70) obstacleCount = 2; // 45% sanse pt 2
+    else obstacleCount = 3;               // 30% sanse pt 3 (ZID)
 
-    for (let i = 0; i < obstacleCount; i++) {
-        const lane = lanes[i]; 
-        
-        if (Math.random() < 0.4) {
-            spawnSingleCar(lane, zPos);
-        } else {
-            spawnSingleShoe(lane, zPos);
+    // LOGICA SPECIALA PENTRU 3 OBSTACOLE
+    if (obstacleCount === 3) {
+        // Alegem aleatoriu UNA din cele 3 benzi care SA FIE SIGUR PANTOF
+        const guaranteedShoeIndex = Math.floor(Math.random() * 3);
+
+        for (let i = 0; i < 3; i++) {
+            const lane = lanes[i];
+            if (i === guaranteedShoeIndex) {
+                // Aici fortam pantoful
+                spawnSingleShoe(lane, zPos);
+            } else {
+                // Celelalte doua pot fi random (Masina sau Pantof)
+                if (Math.random() < 0.5) spawnSingleCar(lane, zPos);
+                else spawnSingleShoe(lane, zPos);
+            }
+        }
+    } else {
+        // Logica normala pentru 1 sau 2 obstacole (ramane mereu loc liber)
+        for (let i = 0; i < obstacleCount; i++) {
+            const lane = lanes[i];
+            // 40% Masina, 60% Pantof
+            if (Math.random() < 0.4) spawnSingleCar(lane, zPos);
+            else spawnSingleShoe(lane, zPos);
         }
     }
 }
@@ -290,55 +314,42 @@ function handleInput(e) {
 // --- TOUCH HANDLERS ---
 
 function handleTouchStart(e) {
-    // PREVENIM ORICE COMPORTAMENT DEFAULT (SCROLL, ZOOM)
     if(e.target.tagName !== 'BUTTON') { 
         e.preventDefault(); 
     }
-    
-    // Luam primul deget
     const firstTouch = e.changedTouches[0];
     touchStartX = firstTouch.clientX;
     touchStartY = firstTouch.clientY;
 }
 
 function handleTouchMove(e) {
-    // Blocare totala a scroll-ului in timpul jocului
     e.preventDefault();
 }
 
 function handleTouchEnd(e) {
     if(!gameActive) return;
-    
-    // Blocare comportamente default (ca double-tap zoom)
     if(e.target.tagName !== 'BUTTON') {
         e.preventDefault();
     }
-
     const endX = e.changedTouches[0].clientX;
     const endY = e.changedTouches[0].clientY;
-    
     handleSwipe(touchStartX, touchStartY, endX, endY);
 }
 
 function handleSwipe(sx, sy, ex, ey) {
     const diffX = ex - sx;
     const diffY = ey - sy;
-    
-    const threshold = 30; // Sensibilitate
+    const threshold = 30; 
 
     if (Math.abs(diffX) > Math.abs(diffY)) {
-        // ORIZONTAL (Stanga/Dreapta)
+        // ORIZONTAL
         if (Math.abs(diffX) > threshold) {
-            if (diffX > 0 && currentLane < 2) {
-                currentLane++; // Swipe Dreapta
-            } else if (diffX < 0 && currentLane > 0) {
-                currentLane--; // Swipe Stanga
-            }
+            if (diffX > 0 && currentLane < 2) currentLane++; 
+            else if (diffX < 0 && currentLane > 0) currentLane--; 
         }
     } else {
-        // VERTICAL (Sus)
+        // VERTICAL
         if (Math.abs(diffY) > threshold) {
-            // Swipe UP (Y scade cand mergi in sus)
             if (diffY < 0 && !isJumping) {
                 isJumping = true;
                 jumpVelocity = JUMP_FORCE;
@@ -426,6 +437,7 @@ function animate() {
     spawnDistanceTimer -= GAME_SPEED;
     if (spawnDistanceTimer <= 0) {
         spawnObstaclePattern(-120);
+        // Distanta variabila intre spawn-uri
         spawnDistanceTimer = MIN_DISTANCE_BETWEEN_OBS + Math.random() * 15;
     }
 
