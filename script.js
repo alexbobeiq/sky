@@ -1,6 +1,6 @@
 // --- CONFIGURARE JOC ---
 const TARGET_SCORE = 18000;
-const GAME_SPEED = 0.40; 
+const GAME_SPEED = 0.7; 
 
 const MESSAGES = [
     "Te iubesc!", "Ești superbă!", "Hai la shopping!", 
