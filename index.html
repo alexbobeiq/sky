@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursa Iubirii - Final Shoe Edition</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+
+    <div id="game-ui">
+        <div id="score-container">
+            <span id="score">0</span> / 18000 km
+        </div>
+        <div id="messages-container"></div>
+    </div>
+
+    <div id="start-screen" class="screen">
+        <h1>Shopping Run?</h1>
+        <p>Aleargă spre inima mea, dar ai grijă la pantofi!</p>
+        <div class="controls-hint">
+            ⬅️ ➡️ <b>Săgeți</b> pentru a schimba banda<br><br>
+            ⬆️ sau <b>SPACE</b> pentru a SĂRI peste pantofi
+        </div>
+        <button id="start-btn">Start</button>
+    </div>
+
+    <div id="lose-screen" class="screen hidden">
+        <h1>Ups!</h1>
+        <p>Ne-am împiedicat într-un toc cui.</p>
+        <button id="restart-lose-btn">Continuă</button>
+    </div>
+
+    <div id="win-screen" class="screen hidden">
+        <h1>Am ajuns!</h1>
+        <p>Tu ești Cenușăreasa mea.</p>
+        <p class="win-msg">Crăciun Fericit, iubirea mea!</p>
+        <button id="restart-win-btn">Rejoacă</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
