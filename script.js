@@ -13,7 +13,6 @@ let isRunning = false;
 
 // 1. STAR DATA (Expanded)
 const realStars = [
-    // WINTER HEXAGON
     { id: 'betelgeuse', name: "Betelgeuse", ra: 5.91, dec: 7.4, mag: 0.45, color: '#ffaa8a' },
     { id: 'rigel', name: "Rigel", ra: 5.24, dec: -8.2, mag: 0.12, color: '#cceeff' },
     { id: 'bellatrix', name: "Bellatrix", ra: 5.41, dec: 6.3, mag: 1.6, color: '#cceeff' },
@@ -74,7 +73,7 @@ const realStars = [
     { id: 'hamal', name: "Hamal", ra: 2.11, dec: 23.46, mag: 2.0, color: '#ffcc99' },
     { id: 'sheratan', name: null, ra: 1.91, dec: 20.80, mag: 2.6, color: '#fff' },
 
-    // SUMMER
+    // Hidden
     { id: 'vega', name: "Vega", ra: 18.62, dec: 38.78, mag: 0.03, color: '#cceeff' },
     { id: 'deneb', name: "Deneb", ra: 20.69, dec: 45.28, mag: 1.25, color: '#cceeff' },
     { id: 'altair', name: "Altair", ra: 19.84, dec: 8.87, mag: 0.77, color: '#cceeff' },
@@ -117,7 +116,6 @@ const constellations = [
     ['vega', 'deneb'], ['deneb', 'altair'], ['altair', 'vega']
 ];
 
-// 2. BACKGROUND STARS
 const bgStars = [];
 for(let i=0; i<4000; i++) {
     bgStars.push({ 
@@ -143,7 +141,6 @@ for(let i=0; i<7000; i++) {
     });
 }
 
-// 3. MATH (Targoviste)
 const LAT = 44.9254 * (Math.PI / 180);
 const LST = 3.5; 
 
@@ -169,27 +166,23 @@ function project(alt, az) {
     const x = w/2 + dAz * scale; 
     const y = h/2 - (alt - viewAlt) * scale;
     
-    // We calculate visibility but return coords anyway for line logic
+
     const isVisible = (x > -50 && x < w + 50 && y > -50 && y < h + 50);
     return { x: x, y: y, visible: isVisible };
 }
 
-// 4. DRAW
 function draw() {
     ctx.clearRect(0, 0, w, h);
     const horizY = h/2 + viewAlt * scale;
     
-    // Ground
     ctx.fillStyle = '#000'; ctx.fillRect(0, horizY, w, h);
     
-    // Subtle Horizon Glow
     const grad = ctx.createLinearGradient(0, horizY - 100, 0, horizY);
     grad.addColorStop(0, 'rgba(5, 10, 20, 0)'); 
     grad.addColorStop(1, 'rgba(10, 15, 30, 0.8)');
     ctx.fillStyle = grad; 
     ctx.fillRect(0, horizY - 100, w, 100);
 
-    // Background
     ctx.fillStyle = '#8fa';
     bgStars.forEach(star => {
         const pos = getSkyPosition(star.ra, star.dec);
@@ -205,14 +198,12 @@ function draw() {
 
     drawShootingStar();
 
-    // Real Stars Calculation
     const starPos = {};
     realStars.forEach(s => {
         const p = getSkyPosition(s.ra, s.dec);
         if (p.alt > -0.2) starPos[s.id] = project(p.alt, p.az);
     });
 
-    // Lines - WITH DYNAMIC WRAP PROTECTION (FIX FOR MOBILE)
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'; 
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -221,8 +212,6 @@ function draw() {
         const p2 = starPos[pair[1]];
         if (p1 && p2) {
             const dist = Math.abs(p1.x - p2.x);
-            // FIX: Ensure line is shorter than 0.9x Scale AND shorter than 80% of screen width
-            // This prevents wrapping lines on small mobile screens
             if (dist < scale * 0.9 && dist < w * 0.8) {
                 ctx.moveTo(p1.x, p1.y); 
                 ctx.lineTo(p2.x, p2.y);
@@ -231,7 +220,6 @@ function draw() {
     });
     ctx.stroke();
 
-    // Stars
     realStars.forEach(star => {
         const scr = starPos[star.id];
         if (scr && scr.visible) {
@@ -274,11 +262,9 @@ function drawShootingStar() {
     }
 }
 
-// 5. INTERACTION & START
 function updateScale() {
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
-    // UPDATED ZOOM: 600 for mobile, 950 for desktop
     scale = w < 800 ? 600 : 950;
 }
 
@@ -298,7 +284,6 @@ function animate() {
     if(isRunning) { draw(); requestAnimationFrame(animate); }
 }
 
-// Mouse Events
 canvas.addEventListener('mousedown', e => { isDragging = true; startX = e.clientX; startY = e.clientY; startAz = viewAz; startAlt = viewAlt; document.getElementById('hint').style.opacity = '0'; });
 window.addEventListener('mousemove', e => {
     if (!isDragging) return;
@@ -308,7 +293,6 @@ window.addEventListener('mousemove', e => {
 });
 window.addEventListener('mouseup', () => isDragging = false);
 
-// --- TOUCH EVENTS FOR MOBILE ---
 canvas.addEventListener('touchstart', e => {
     e.preventDefault(); 
     isDragging = true;
@@ -335,5 +319,4 @@ canvas.addEventListener('touchend', () => isDragging = false);
 
 window.addEventListener('resize', () => { updateScale(); });
 
-// Initialize width/height on load just in case
 updateScale();
