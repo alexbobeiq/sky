@@ -2,7 +2,9 @@ const canvas = document.getElementById('skyCanvas');
 const ctx = canvas.getContext('2d');
 
 let w, h;
-let scale = 950; 
+// DYNAMIC ZOOM: If screen width is less than 800px (mobile), zoom out (400). Else desktop zoom (950).
+let scale = window.innerWidth < 800 ? 400 : 950; 
+
 let viewAz = Math.PI; 
 let viewAlt = 0.45;    
 let isDragging = false;
@@ -218,8 +220,13 @@ function drawShootingStar() {
 
 // 5. INTERACTION & START
 function startExperience() {
+    // Resize immediately on start
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
+    
+    // Update scale immediately for mobile
+    scale = w < 800 ? 400 : 950;
+
     const intro = document.getElementById('intro');
     intro.style.opacity = '0';
     if (!isRunning) { isRunning = true; animate(); }
@@ -246,7 +253,7 @@ window.addEventListener('mouseup', () => isDragging = false);
 
 // --- TOUCH EVENTS FOR MOBILE ---
 canvas.addEventListener('touchstart', e => {
-    e.preventDefault(); // Stop default scroll
+    e.preventDefault(); 
     isDragging = true;
     const touch = e.touches[0];
     startX = touch.clientX;
@@ -257,7 +264,7 @@ canvas.addEventListener('touchstart', e => {
 }, { passive: false });
 
 canvas.addEventListener('touchmove', e => {
-    e.preventDefault(); // Stop default scroll
+    e.preventDefault(); 
     if (!isDragging) return;
     const touch = e.touches[0];
     let dx = (touch.clientX - startX) / scale;
@@ -269,4 +276,10 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', () => isDragging = false);
 
-window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });
+// RESIZE HANDLER
+window.addEventListener('resize', () => { 
+    w = canvas.width = window.innerWidth; 
+    h = canvas.height = window.innerHeight; 
+    // Dynamically adjust scale if orientation changes
+    scale = w < 800 ? 400 : 950;
+});
