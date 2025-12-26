@@ -234,6 +234,7 @@ function animate() {
     if(isRunning) { draw(); requestAnimationFrame(animate); }
 }
 
+// Mouse Events
 canvas.addEventListener('mousedown', e => { isDragging = true; startX = e.clientX; startY = e.clientY; startAz = viewAz; startAlt = viewAlt; document.getElementById('hint').style.opacity = '0'; });
 window.addEventListener('mousemove', e => {
     if (!isDragging) return;
@@ -242,4 +243,30 @@ window.addEventListener('mousemove', e => {
     viewAlt = Math.max(-0.2, Math.min(1.5, viewAlt));
 });
 window.addEventListener('mouseup', () => isDragging = false);
+
+// --- TOUCH EVENTS FOR MOBILE ---
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault(); // Stop default scroll
+    isDragging = true;
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    startAz = viewAz;
+    startAlt = viewAlt;
+    document.getElementById('hint').style.opacity = '0';
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault(); // Stop default scroll
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    let dx = (touch.clientX - startX) / scale;
+    let dy = (touch.clientY - startY) / scale;
+    viewAz = startAz - dx;
+    viewAlt = startAlt + dy;
+    viewAlt = Math.max(-0.2, Math.min(1.5, viewAlt));
+}, { passive: false });
+
+canvas.addEventListener('touchend', () => isDragging = false);
+
 window.addEventListener('resize', () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; });

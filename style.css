@@ -6,16 +6,19 @@ body, html {
     padding: 0; 
     width: 100%; 
     height: 100%;
-    /* Pure Black Background */
     background-color: #000000;
     overflow: hidden;
     font-family: 'Montserrat', sans-serif;
     user-select: none;
+    /* Prevent "pull to refresh" on mobile */
+    overscroll-behavior: none;
 }
 
 canvas { 
     display: block; 
     cursor: grab; 
+    /* CRITICAL FOR MOBILE: Disables default browser scrolling/zooming on the canvas */
+    touch-action: none; 
 }
 
 canvas:active { 
@@ -46,6 +49,7 @@ h1 {
     text-transform: uppercase;
     margin: 0 0 15px 0;
     text-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    text-align: center; /* Better for mobile portrait */
 }
 
 .subtitle {
@@ -55,6 +59,7 @@ h1 {
     margin-bottom: 50px;
     color: #aaddff; 
     text-transform: uppercase;
+    text-align: center;
 }
 
 .start-btn {
@@ -70,6 +75,8 @@ h1 {
     text-transform: uppercase;
     border-radius: 50px; 
     transition: all 0.3s ease;
+    /* Prevent highlighting on mobile tap */
+    -webkit-tap-highlight-color: transparent;
 }
 
 .start-btn:hover { 
@@ -127,4 +134,11 @@ h1 {
     font-size: 0.8rem; 
     letter-spacing: 3px; 
     font-weight: 300;
+}
+
+/* Mobile Responsiveness for text sizing */
+@media (max-width: 600px) {
+    h1 { font-size: 2rem; letter-spacing: 4px; }
+    .subtitle { font-size: 0.8rem; }
+    .info-card { padding: 15px; width: 95%; }
 }
