@@ -12,11 +12,9 @@ let startX, startY, startAz, startAlt;
 let shootingStar = null;
 let isRunning = false; 
 
-// ==========================================
-// 1. EXPANDED STAR DATA
-// ==========================================
+// 1. STAR DATA (Expanded)
 const realStars = [
-    // --- WINTER HEXAGON (South/Overhead) ---
+    // WINTER HEXAGON
     { id: 'betelgeuse', name: "Betelgeuse", ra: 5.91, dec: 7.4, mag: 0.45, color: '#ffaa8a' },
     { id: 'rigel', name: "Rigel", ra: 5.24, dec: -8.2, mag: 0.12, color: '#cceeff' },
     { id: 'bellatrix', name: "Bellatrix", ra: 5.41, dec: 6.3, mag: 1.6, color: '#cceeff' },
@@ -36,8 +34,7 @@ const realStars = [
     { id: 'menkalinan', name: null, ra: 5.99, dec: 44.9, mag: 1.9, color: '#fff' },
     { id: 'procyon', name: "Procyon", ra: 7.65, dec: 5.2, mag: 0.38, color: '#fff' },
     
-    // --- NORTH CIRCUMPOLAR ---
-    // Big Dipper (Ursa Major)
+    // NORTH
     { id: 'dubhe', name: "Dubhe", ra: 11.06, dec: 61.7, mag: 1.8, color: '#ffcc99' },
     { id: 'merak', name: "Merak", ra: 11.03, dec: 56.3, mag: 2.3, color: '#fff' },
     { id: 'phecda', name: null, ra: 11.89, dec: 53.6, mag: 2.4, color: '#fff' },
@@ -45,50 +42,40 @@ const realStars = [
     { id: 'alioth', name: null, ra: 12.90, dec: 55.9, mag: 1.7, color: '#fff' },
     { id: 'mizar', name: "Mizar", ra: 13.39, dec: 54.9, mag: 2.2, color: '#fff' },
     { id: 'alkaid', name: "Alkaid", ra: 13.79, dec: 49.3, mag: 1.8, color: '#cceeff' },
-    // Little Dipper (Ursa Minor)
     { id: 'polaris', name: "Polaris", ra: 2.53, dec: 89.2, mag: 1.9, color: '#ffebb0' },
     { id: 'kochab', name: "Kochab", ra: 14.84, dec: 74.1, mag: 2.0, color: '#ffcc99' },
-    // Cassiopeia
     { id: 'schedar', name: "Schedar", ra: 0.67, dec: 56.5, mag: 2.2, color: '#ffcc99' },
     { id: 'caph', name: null, ra: 0.15, dec: 59.1, mag: 2.2, color: '#fff' },
     { id: 'gamma_cas', name: null, ra: 0.93, dec: 60.7, mag: 2.1, color: '#cceeff' },
     { id: 'ruchbah', name: null, ra: 1.43, dec: 60.2, mag: 2.6, color: '#fff' },
     { id: 'segin', name: null, ra: 1.90, dec: 63.6, mag: 3.3, color: '#fff' },
-    // Cepheus (House shape next to Cassiopeia)
     { id: 'alderamin', name: "Alderamin", ra: 21.31, dec: 62.58, mag: 2.4, color: '#fff' },
     { id: 'alfirk', name: null, ra: 21.48, dec: 70.56, mag: 3.2, color: '#fff' },
     { id: 'errai', name: null, ra: 23.65, dec: 77.63, mag: 3.2, color: '#ffcc99' },
-    // Draco (Dragon)
     { id: 'eltanin', name: "Eltanin", ra: 17.94, dec: 51.48, mag: 2.2, color: '#ffcc99' },
     { id: 'rastaban', name: null, ra: 17.51, dec: 52.30, mag: 2.7, color: '#fff' },
-    { id: 'thuban', name: "Thuban", ra: 14.07, dec: 64.37, mag: 3.6, color: '#fff' }, // Ancient North Star
+    { id: 'thuban', name: "Thuban", ra: 14.07, dec: 64.37, mag: 3.6, color: '#fff' },
 
-    // --- EAST (Rising Spring Stars) ---
-    // Leo (The Lion)
+    // EAST
     { id: 'regulus', name: "Regulus", ra: 10.13, dec: 11.9, mag: 1.3, color: '#cceeff' },
     { id: 'algieba', name: null, ra: 10.33, dec: 19.8, mag: 2.0, color: '#ffcc99' },
     { id: 'denebola', name: "Denebola", ra: 11.81, dec: 14.5, mag: 2.1, color: '#fff' },
     { id: 'zosma', name: null, ra: 11.23, dec: 20.52, mag: 2.5, color: '#fff' },
-    // Cancer (The Crab - faint between Gemini/Leo)
     { id: 'acubens', name: null, ra: 8.97, dec: 11.85, mag: 4.2, color: '#fff' },
     
-    // --- WEST (Setting Autumn Stars) ---
-    // Pegasus (The Great Square)
+    // WEST
     { id: 'markab', name: "Markab", ra: 23.07, dec: 15.2, mag: 2.4, color: '#fff' },
     { id: 'scheat', name: "Scheat", ra: 23.06, dec: 28.0, mag: 2.4, color: '#ffcc99' },
     { id: 'algenib', name: null, ra: 0.22, dec: 15.18, mag: 2.8, color: '#cceeff' },
-    // Andromeda
     { id: 'alpheratz', name: "Alpheratz", ra: 0.13, dec: 29.0, mag: 2.0, color: '#cceeff' },
     { id: 'mirach', name: "Mirach", ra: 1.16, dec: 35.6, mag: 2.0, color: '#ffcc99' },
     { id: 'almach', name: null, ra: 2.06, dec: 42.3, mag: 2.1, color: '#ffcc99' },
-    // Perseus
     { id: 'mirfak', name: "Mirfak", ra: 3.41, dec: 49.86, mag: 1.7, color: '#cceeff' },
-    { id: 'algol', name: "Algol", ra: 3.13, dec: 40.95, mag: 2.1, color: '#ffcc99' }, // The Demon Star
-    // Aries (The Ram)
+    { id: 'algol', name: "Algol", ra: 3.13, dec: 40.95, mag: 2.1, color: '#ffcc99' },
     { id: 'hamal', name: "Hamal", ra: 2.11, dec: 23.46, mag: 2.0, color: '#ffcc99' },
     { id: 'sheratan', name: null, ra: 1.91, dec: 20.80, mag: 2.6, color: '#fff' },
 
-    // --- SUMMER TRIANGLE (Low West/NorthWest) ---
+    // SUMMER
     { id: 'vega', name: "Vega", ra: 18.62, dec: 38.78, mag: 0.03, color: '#cceeff' },
     { id: 'deneb', name: "Deneb", ra: 20.69, dec: 45.28, mag: 1.25, color: '#cceeff' },
     { id: 'altair', name: "Altair", ra: 19.84, dec: 8.87, mag: 0.77, color: '#cceeff' },
@@ -106,8 +93,8 @@ const constellations = [
     ['sirius', 'mirzam'], ['mirzam', 'wezen'], ['wezen', 'adhara'], ['sirius', 'adhara'],
     // Taurus / Auriga / Gemini / Canis Minor
     ['aldebaran', 'elnath'], ['castor', 'pollux'], 
-    ['capella', 'menkalinan'], ['menkalinan', 'elnath'], // Auriga Hexagon shape
-    ['procyon', 'acubens'], // Loose connection to Cancer
+    ['capella', 'menkalinan'], ['menkalinan', 'elnath'], 
+    ['procyon', 'acubens'], 
     // Ursa Major
     ['dubhe', 'merak'], ['merak', 'phecda'], ['phecda', 'megrez'], ['megrez', 'alioth'], 
     ['alioth', 'mizar'], ['mizar', 'alkaid'], ['dubhe', 'megrez'],
@@ -115,19 +102,19 @@ const constellations = [
     ['polaris', 'kochab'],
     // Cassiopeia & Cepheus
     ['caph', 'schedar'], ['schedar', 'gamma_cas'], ['gamma_cas', 'ruchbah'], ['ruchbah', 'segin'],
-    ['alderamin', 'alfirk'], ['alfirk', 'errai'], ['alderamin', 'errai'], // Cepheus triangle
+    ['alderamin', 'alfirk'], ['alfirk', 'errai'], ['alderamin', 'errai'],
     // Draco
-    ['eltanin', 'rastaban'], ['thuban', 'kochab'], // Visual link near pole
+    ['eltanin', 'rastaban'], ['thuban', 'kochab'], 
     // Leo
     ['regulus', 'algieba'], ['algieba', 'zosma'], ['zosma', 'denebola'], ['algieba', 'denebola'],
     // Pegasus & Andromeda
-    ['markab', 'scheat'], ['scheat', 'alpheratz'], ['alpheratz', 'algenib'], ['algenib', 'markab'], // Square
-    ['alpheratz', 'mirach'], ['mirach', 'almach'], // Andromeda chain
+    ['markab', 'scheat'], ['scheat', 'alpheratz'], ['alpheratz', 'algenib'], ['algenib', 'markab'],
+    ['alpheratz', 'mirach'], ['mirach', 'almach'], 
     // Perseus
-    ['mirfak', 'algol'], ['mirfak', 'almach'], // Link to Andromeda
+    ['mirfak', 'algol'], ['mirfak', 'almach'], 
     // Aries
     ['hamal', 'sheratan'],
-    // Summer Triangle lines
+    // Summer Triangle
     ['vega', 'deneb'], ['deneb', 'altair'], ['altair', 'vega']
 ];
 
@@ -225,7 +212,7 @@ function draw() {
         if (p.alt > -0.2) starPos[s.id] = project(p.alt, p.az);
     });
 
-    // Lines - WITH WRAP PROTECTION
+    // Lines - WITH DYNAMIC WRAP PROTECTION (FIX FOR MOBILE)
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'; 
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -234,7 +221,9 @@ function draw() {
         const p2 = starPos[pair[1]];
         if (p1 && p2) {
             const dist = Math.abs(p1.x - p2.x);
-            if (dist < 2000) {
+            // Dynamic threshold: Limit line length to 1.5x the current zoom scale
+            // This works on both mobile (low scale) and desktop (high scale)
+            if (dist < scale * 1.5) {
                 ctx.moveTo(p1.x, p1.y); 
                 ctx.lineTo(p2.x, p2.y);
             }
@@ -289,10 +278,7 @@ function drawShootingStar() {
 function startExperience() {
     w = canvas.width = window.innerWidth;
     h = canvas.height = window.innerHeight;
-    
-    // Check zoom on start
     scale = w < 800 ? 400 : 950;
-
     const intro = document.getElementById('intro');
     intro.style.opacity = '0';
     if (!isRunning) { isRunning = true; animate(); }
